@@ -123,9 +123,17 @@ export default class GameScene extends Phaser.Scene {
         this.wrongGuesses = 0;
         this.maxWrongGuesses = 6;
         this.gameOver = false;
+        this.availableWords = [];
+        this.completedWords = [];
+        this.wordsCorrect = 0;
     }
 
     init() {
+        if (!this.availableWords || this.availableWords.length === 0) {
+            this.availableWords = [...this.wordDatabase];
+            this.completedWords = [];
+            this.wordsCorrect = 0;
+        }
         this.currentWord = '';
         this.currentDescription = '';
         this.playerInput = [];
@@ -145,7 +153,13 @@ export default class GameScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.errorText = this.add.text(width / 2, 70, `Mistakes: ${this.wrongGuesses}/${this.maxWrongGuesses}`, {
+        this.scoreText = this.add.text(width / 2, 70, `Words: ${this.wordsCorrect} | Remaining: ${this.availableWords.length}`, {
+            fontSize: '18px',
+            color: '#4CAF50',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.errorText = this.add.text(width / 2, 95, `Mistakes: ${this.wrongGuesses}/${this.maxWrongGuesses}`, {
             fontSize: '20px',
             color: '#FF6B6B'
         }).setOrigin(0.5);
@@ -245,8 +259,22 @@ export default class GameScene extends Phaser.Scene {
     }
 
     selectRandomWord() {
-        const randomIndex = Phaser.Math.Between(0, this.wordDatabase.length - 1);
-        const wordData = this.wordDatabase[randomIndex];
+        if (this.availableWords.length === 0) {
+            this.gameOver = true;
+            window.speechSynthesis.cancel();
+            this.time.delayedCall(500, () => {
+                this.scene.start('WinScene', { 
+                    wordsCompleted: this.wordsCorrect,
+                    statistics: this.completedWords 
+                });
+            });
+            return;
+        }
+        
+        const randomIndex = Phaser.Math.Between(0, this.availableWords.length - 1);
+        const wordData = this.availableWords[randomIndex];
+        this.availableWords.splice(randomIndex, 1);
+        
         this.currentWord = wordData.palabra.toUpperCase();
         this.currentDescription = wordData.descripcion;
     }
@@ -441,8 +469,16 @@ export default class GameScene extends Phaser.Scene {
             this.gameOver = true;
             window.speechSynthesis.cancel();
             
-            this.time.delayedCall(500, () => {
-                this.scene.start('WinScene');
+            this.wordsCorrect++;
+            this.completedWords.push({
+                word: this.currentWord,
+                errors: this.wrongGuesses
+            });
+            
+            this.flashMessage('¡Palabra Correcta!', 0x4CAF50);
+            
+            this.time.delayedCall(1500, () => {
+                this.scene.restart();
             });
         }
     }
@@ -453,10 +489,14 @@ export default class GameScene extends Phaser.Scene {
             window.speechSynthesis.cancel();
             
             this.wordDisplay.setText(this.currentWord);
-            this.wordDisplay.setColor('#e74c3c');
+            this.wordDisplay.setColor('#FF6B6B');
             
             this.time.delayedCall(1500, () => {
-                this.scene.start('LoseScene', { word: this.currentWord });
+                this.scene.start('LoseScene', { 
+                    word: this.currentWord,
+                    wordsCompleted: this.wordsCorrect,
+                    statistics: this.completedWords
+                });
             });
         }
     }
