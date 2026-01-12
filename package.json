@@ -1,0 +1,23 @@
+{
+  "name": "spelling-bee-phaser",
+  "version": "1.0.0",
+  "description": "Phaser.js game project",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "keywords": [
+    "phaser",
+    "game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@parcel/transformer-glsl": "^2.8.3",
+    "parcel": "^2.8.3",
+    "process": "^0.11.10"
+  },
+  "dependencies": {
+    "phaser": "^3.60.0"
+  }
+}
