@@ -11,7 +11,7 @@ export default class WinScene extends Phaser.Scene {
 
         this.add.text(width / 2, 150, '¡GANASTE!', {
             fontSize: '64px',
-            color: '#2ecc71',
+            color: '#4CAF50',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
@@ -21,10 +21,10 @@ export default class WinScene extends Phaser.Scene {
 
         this.add.text(width / 2, 350, 'Has adivinado la palabra correctamente', {
             fontSize: '24px',
-            color: '#ffffff'
+            color: '#333333'
         }).setOrigin(0.5);
 
-        const playAgainButton = this.add.rectangle(width / 2, 480, 250, 60, 0x27ae60)
+        const playAgainButton = this.add.rectangle(width / 2, 480, 250, 60, 0x6C63FF)
             .setInteractive({ useHandCursor: true });
 
         const playAgainText = this.add.text(width / 2, 480, 'JUGAR DE NUEVO', {
@@ -34,11 +34,11 @@ export default class WinScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         playAgainButton.on('pointerover', () => {
-            playAgainButton.setFillStyle(0x2ecc71);
+            playAgainButton.setFillStyle(0x5A52E0);
         });
 
         playAgainButton.on('pointerout', () => {
-            playAgainButton.setFillStyle(0x27ae60);
+            playAgainButton.setFillStyle(0x6C63FF);
         });
 
         playAgainButton.on('pointerdown', () => {

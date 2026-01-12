@@ -16,7 +16,7 @@ export default class LoseScene extends Phaser.Scene {
 
         this.add.text(width / 2, 150, 'GAME OVER', {
             fontSize: '64px',
-            color: '#e74c3c',
+            color: '#FF6B6B',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
@@ -26,16 +26,16 @@ export default class LoseScene extends Phaser.Scene {
 
         this.add.text(width / 2, 340, 'La palabra correcta era:', {
             fontSize: '24px',
-            color: '#ffffff'
+            color: '#333333'
         }).setOrigin(0.5);
 
         this.add.text(width / 2, 390, this.correctWord, {
             fontSize: '36px',
-            color: '#f39c12',
+            color: '#FFD93D',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        const tryAgainButton = this.add.rectangle(width / 2, 500, 250, 60, 0xe67e22)
+        const tryAgainButton = this.add.rectangle(width / 2, 500, 250, 60, 0x6C63FF)
             .setInteractive({ useHandCursor: true });
 
         const tryAgainText = this.add.text(width / 2, 500, 'INTENTAR DE NUEVO', {
@@ -45,11 +45,11 @@ export default class LoseScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         tryAgainButton.on('pointerover', () => {
-            tryAgainButton.setFillStyle(0xf39c12);
+            tryAgainButton.setFillStyle(0x5A52E0);
         });
 
         tryAgainButton.on('pointerout', () => {
-            tryAgainButton.setFillStyle(0xe67e22);
+            tryAgainButton.setFillStyle(0x6C63FF);
         });
 
         tryAgainButton.on('pointerdown', () => {

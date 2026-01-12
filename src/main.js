@@ -10,7 +10,7 @@ const config = {
     width: 800,
     height: 600,
     parent: 'game-container',
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#EAF4FF',
     scene: [BootScene, MenuScene, GameScene, WinScene, LoseScene]
 };
 
