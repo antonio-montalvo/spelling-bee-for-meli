@@ -178,7 +178,7 @@ export default class GameScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         this.wordDisplay = this.add.text(width / 2, 560, '', {
-            fontSize: '40px',
+            fontSize: '16px',
             color: '#FFD93D',
             fontStyle: 'bold',
             letterSpacing: 10,
@@ -208,6 +208,10 @@ export default class GameScene extends Phaser.Scene {
         });
 
         repeatWordButton.on('pointerdown', () => {
+            repeatWordButton.setFillStyle(0xFF0000);
+            this.time.delayedCall(200, () => {
+                repeatWordButton.setFillStyle(0x6C63FF);
+            });
             this.speakWord();
         });
 
@@ -229,6 +233,10 @@ export default class GameScene extends Phaser.Scene {
         });
 
         hintButton.on('pointerdown', () => {
+            hintButton.setFillStyle(0xFF0000);
+            this.time.delayedCall(200, () => {
+                hintButton.setFillStyle(0x6C63FF);
+            });
             this.speakHint();
         });
 
@@ -259,9 +267,11 @@ export default class GameScene extends Phaser.Scene {
             }
         });
 
-        this.time.delayedCall(500, () => {
-            this.speakWord();
-        });
+        if (!this.isMobile) {
+            this.time.delayedCall(500, () => {
+                this.speakWord();
+            });
+        }
     }
 
     createOnScreenKeyboard() {
@@ -354,11 +364,13 @@ export default class GameScene extends Phaser.Scene {
     selectRandomWord() {
         if (this.availableWords.length === 0) {
             this.gameOver = true;
-            window.speechSynthesis.cancel();
+            if (typeof responsiveVoice !== 'undefined') {
+                responsiveVoice.cancel();
+            }
             this.time.delayedCall(500, () => {
                 this.scene.start('WinScene', { 
                     wordsCompleted: this.wordsCorrect,
-                    statistics: this.completedWords 
+                    statistics: this.completedWords
                 });
             });
             return;
@@ -373,64 +385,40 @@ export default class GameScene extends Phaser.Scene {
     }
 
     speakWord() {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
+        if (typeof responsiveVoice === 'undefined') {
+            return;
+        }
+        
+        try {
+            responsiveVoice.cancel();
             
-            const utterance = new SpeechSynthesisUtterance(this.currentWord);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.8;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+            responsiveVoice.speak(this.currentWord, 'US English Female', {
+                rate: 0.8,
+                pitch: 1,
+                volume: 1
+            });
             
-            const voices = window.speechSynthesis.getVoices();
-            const femaleVoice = voices.find(voice => 
-                voice.lang.includes('en') && 
-                (voice.name.toLowerCase().includes('female') || 
-                 voice.name.toLowerCase().includes('woman') ||
-                 voice.name.toLowerCase().includes('zira') ||
-                 voice.name.toLowerCase().includes('samantha') ||
-                 voice.name.toLowerCase().includes('karen') ||
-                 voice.name.toLowerCase().includes('victoria'))
-            );
-            
-            if (femaleVoice) {
-                utterance.voice = femaleVoice;
-            }
-            
-            window.speechSynthesis.speak(utterance);
-        } else {
-            console.log('Text-to-Speech is not available in this browser');
+        } catch (error) {
+            alert('Speech error: ' + error.message);
         }
     }
 
     speakHint() {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
+        if (typeof responsiveVoice === 'undefined') {
+            return;
+        }
+        
+        try {
+            responsiveVoice.cancel();
             
-            const utterance = new SpeechSynthesisUtterance(this.currentDescription);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.9;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+            responsiveVoice.speak(this.currentDescription, 'US English Female', {
+                rate: 0.9,
+                pitch: 1,
+                volume: 1
+            });
             
-            const voices = window.speechSynthesis.getVoices();
-            const femaleVoice = voices.find(voice => 
-                voice.lang.includes('en') && 
-                (voice.name.toLowerCase().includes('female') || 
-                 voice.name.toLowerCase().includes('woman') ||
-                 voice.name.toLowerCase().includes('zira') ||
-                 voice.name.toLowerCase().includes('samantha') ||
-                 voice.name.toLowerCase().includes('karen') ||
-                 voice.name.toLowerCase().includes('victoria'))
-            );
-            
-            if (femaleVoice) {
-                utterance.voice = femaleVoice;
-            }
-            
-            window.speechSynthesis.speak(utterance);
-        } else {
-            console.log('Text-to-Speech is not available in this browser');
+        } catch (error) {
+            // Silent error handling
         }
     }
 
@@ -562,7 +550,9 @@ export default class GameScene extends Phaser.Scene {
     checkWin() {
         if (this.currentPosition >= this.currentWord.length) {
             this.gameOver = true;
-            window.speechSynthesis.cancel();
+            if (typeof responsiveVoice !== 'undefined') {
+                responsiveVoice.cancel();
+            }
             
             this.wordsCorrect++;
             this.completedWords.push({
@@ -581,7 +571,9 @@ export default class GameScene extends Phaser.Scene {
     checkLose() {
         if (this.wrongGuesses >= this.maxWrongGuesses) {
             this.gameOver = true;
-            window.speechSynthesis.cancel();
+            if (typeof responsiveVoice !== 'undefined') {
+                responsiveVoice.cancel();
+            }
             
             this.wordDisplay.setText(this.currentWord);
             this.wordDisplay.setColor('#FF6B6B');
