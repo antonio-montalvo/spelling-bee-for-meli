@@ -126,6 +126,19 @@ export default class GameScene extends Phaser.Scene {
         this.availableWords = [];
         this.completedWords = [];
         this.wordsCorrect = 0;
+        this.isMobile = this.detectMobile();
+    }
+
+    detectMobile() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+        const isSmallScreen = window.innerWidth <= 768;
+        
+        const isTouchDevice = ('ontouchstart' in window) || 
+                             (navigator.maxTouchPoints > 0) || 
+                             (navigator.msMaxTouchPoints > 0);
+        
+        return isMobileDevice || isSmallScreen || isTouchDevice;
     }
 
     init() {
@@ -147,46 +160,40 @@ export default class GameScene extends Phaser.Scene {
         
         this.selectRandomWord();
         
-        this.add.text(width / 2, 30, 'HANGMAN', {
-            fontSize: '32px',
+        this.add.text(width / 2, 50, 'HANGMAN', {
+            fontSize: '52px',
             color: '#333333',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.scoreText = this.add.text(width / 2, 70, `Words: ${this.wordsCorrect} | Remaining: ${this.availableWords.length}`, {
-            fontSize: '18px',
+        this.scoreText = this.add.text(width / 2, 115, `Words: ${this.wordsCorrect} | Remaining: ${this.availableWords.length}`, {
+            fontSize: '26px',
             color: '#4CAF50',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        this.errorText = this.add.text(width / 2, 95, `Mistakes: ${this.wrongGuesses}/${this.maxWrongGuesses}`, {
-            fontSize: '20px',
+        this.errorText = this.add.text(width / 2, 155, `Mistakes: ${this.wrongGuesses}/${this.maxWrongGuesses}`, {
+            fontSize: '30px',
             color: '#FF6B6B'
         }).setOrigin(0.5);
 
-        this.wordDisplay = this.add.text(width / 2, 450, '', {
-            fontSize: '16px',
+        this.wordDisplay = this.add.text(width / 2, 560, '', {
+            fontSize: '40px',
             color: '#FFD93D',
             fontStyle: 'bold',
-            letterSpacing: 4,
+            letterSpacing: 10,
             stroke: '#333333',
-            strokeThickness: 2
+            strokeThickness: 4
         }).setOrigin(0.5);
 
-        this.positionText = this.add.text(width / 2, 520, 'Position: 1', {
-            fontSize: '18px',
-            color: '#333333'
-        }).setOrigin(0.5);
+        if (this.isMobile) {
+            this.createOnScreenKeyboard();
+        }
 
-        this.hintText = this.add.text(width / 2, 555, 'SPACE = space | + = hint', {
-            fontSize: '16px',
-            color: '#FFD93D'
-        }).setOrigin(0.5);
-
-        const repeatWordButton = this.add.rectangle(width / 2 - 110, 590, 200, 40, 0x6C63FF)
+        const repeatWordButton = this.add.rectangle(width - 120, 60, 200, 50, 0x6C63FF)
             .setInteractive({ useHandCursor: true });
 
-        this.add.text(width / 2 - 110, 590, '🔊 REPEAT WORD', {
+        this.add.text(width - 120, 60, '🔊 REPEAT WORD', {
             fontSize: '16px',
             color: '#ffffff',
             fontStyle: 'bold'
@@ -204,10 +211,10 @@ export default class GameScene extends Phaser.Scene {
             this.speakWord();
         });
 
-        const hintButton = this.add.rectangle(width / 2 + 110, 590, 200, 40, 0x6C63FF)
+        const hintButton = this.add.rectangle(width - 120, 125, 200, 50, 0x6C63FF)
             .setInteractive({ useHandCursor: true });
 
-        this.add.text(width / 2 + 110, 590, '💡 GET HINT', {
+        this.add.text(width - 120, 125, '💡 GET HINT', {
             fontSize: '16px',
             color: '#ffffff',
             fontStyle: 'bold'
@@ -229,7 +236,6 @@ export default class GameScene extends Phaser.Scene {
         this.drawHangmanBase();
 
         this.updateWordDisplay();
-        this.updatePosition();
         
         this.input.keyboard.removeAllListeners();
         
@@ -255,6 +261,93 @@ export default class GameScene extends Phaser.Scene {
 
         this.time.delayedCall(500, () => {
             this.speakWord();
+        });
+    }
+
+    createOnScreenKeyboard() {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+        const keyboardY = height - 180;
+        const buttonSize = 50;
+        const spacing = 8;
+        const fontSize = '24px';
+        
+        const rows = [
+            ['Q','W','E','R','T','Y','U','I','O','P'],
+            ['A','S','D','F','G','H','J','K','L'],
+            ['Z','X','C','V','B','N','M']
+        ];
+        
+        this.keyboardButtons = [];
+        
+        rows.forEach((row, rowIndex) => {
+            const rowWidth = row.length * (buttonSize + spacing);
+            const startX = (width - rowWidth) / 2 + buttonSize / 2;
+            const y = keyboardY + (rowIndex * (buttonSize + spacing));
+            
+            row.forEach((letter, colIndex) => {
+                const x = startX + (colIndex * (buttonSize + spacing));
+                
+                const button = this.add.rectangle(x, y, buttonSize, buttonSize, 0x6C63FF)
+                    .setInteractive({ useHandCursor: true });
+                
+                const text = this.add.text(x, y, letter, {
+                    fontSize: fontSize,
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                
+                button.on('pointerdown', () => {
+                    if (!this.gameOver) {
+                        this.enterLetter(letter);
+                        button.setFillStyle(0x5A52E0);
+                        this.time.delayedCall(100, () => {
+                            button.setFillStyle(0x6C63FF);
+                        });
+                    }
+                });
+                
+                this.keyboardButtons.push({ button, text });
+            });
+        });
+        
+        const spaceButton = this.add.rectangle(width / 2 - 150, keyboardY + (3 * (buttonSize + spacing)), 250, buttonSize, 0x6C63FF)
+            .setInteractive({ useHandCursor: true });
+        
+        this.add.text(width / 2 - 150, keyboardY + (3 * (buttonSize + spacing)), 'SPACE', {
+            fontSize: '22px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        
+        spaceButton.on('pointerdown', () => {
+            if (!this.gameOver) {
+                this.enterLetter(' ');
+                spaceButton.setFillStyle(0x5A52E0);
+                this.time.delayedCall(100, () => {
+                    spaceButton.setFillStyle(0x6C63FF);
+                });
+            }
+        });
+        
+        const hintBtnY = keyboardY + (3 * (buttonSize + spacing));
+        const hintButton = this.add.rectangle(width / 2 + 150, hintBtnY, 150, buttonSize, 0xFFD93D)
+            .setInteractive({ useHandCursor: true });
+        
+        this.add.text(width / 2 + 150, hintBtnY, 'HINT', {
+            fontSize: '22px',
+            color: '#333333',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        
+        hintButton.on('pointerdown', () => {
+            if (!this.gameOver) {
+                this.speakHint();
+                hintButton.setFillStyle(0xFFB93D);
+                this.time.delayedCall(100, () => {
+                    hintButton.setFillStyle(0xFFD93D);
+                });
+            }
         });
     }
 
@@ -353,7 +446,6 @@ export default class GameScene extends Phaser.Scene {
             this.playerInput[this.currentPosition] = letter;
             this.currentPosition++;
             this.updateWordDisplay();
-            this.updatePosition();
             this.checkWin();
         } else {
             this.flashMessage('Wrong letter', 0xFF6B6B);
@@ -399,14 +491,6 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
-    updatePosition() {
-        if (this.currentPosition < this.currentWord.length) {
-            this.positionText.setText(`Position: ${this.currentPosition + 1} of ${this.currentWord.length}`);
-        } else {
-            this.positionText.setText(`Complete!`);
-        }
-    }
-
     flashMessage(text, color) {
         const width = this.cameras.main.width;
         const message = this.add.text(width / 2, 400, text, {
@@ -429,35 +513,46 @@ export default class GameScene extends Phaser.Scene {
 
     drawHangmanBase() {
         const g = this.hangmanGraphics;
-        g.lineStyle(3, 0x333333);
+        g.lineStyle(4, 0x333333);
         
-        g.strokeRect(100, 100, 200, 250);
+        const width = this.cameras.main.width;
+        const centerX = width / 2;
+        const baseY = 210;
+        
+        g.strokeRect(centerX - 150, baseY, 300, 320);
     }
 
     drawHangmanPart() {
         const g = this.hangmanGraphics;
-        g.lineStyle(4, 0xFF6B6B);
+        g.lineStyle(5, 0xFF6B6B);
 
+        const width = this.cameras.main.width;
+        const centerX = width / 2;
+        const headY = 270;
+        const headRadius = 28;
+        const bodyTop = headY + headRadius;
+        const bodyBottom = 430;
+        
         switch(this.wrongGuesses) {
             case 1:
                 g.beginPath();
-                g.arc(200, 150, 20, 0, Math.PI * 2);
+                g.arc(centerX, headY, headRadius, 0, Math.PI * 2);
                 g.strokePath();
                 break;
             case 2:
-                g.lineBetween(200, 170, 200, 250);
+                g.lineBetween(centerX, bodyTop, centerX, bodyBottom);
                 break;
             case 3:
-                g.lineBetween(200, 190, 160, 220);
+                g.lineBetween(centerX, bodyTop + 30, centerX - 60, bodyTop + 80);
                 break;
             case 4:
-                g.lineBetween(200, 190, 240, 220);
+                g.lineBetween(centerX, bodyTop + 30, centerX + 60, bodyTop + 80);
                 break;
             case 5:
-                g.lineBetween(200, 250, 160, 290);
+                g.lineBetween(centerX, bodyBottom, centerX - 50, bodyBottom + 60);
                 break;
             case 6:
-                g.lineBetween(200, 250, 240, 290);
+                g.lineBetween(centerX, bodyBottom, centerX + 50, bodyBottom + 60);
                 break;
         }
 
