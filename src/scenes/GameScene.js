@@ -141,53 +141,74 @@ export default class GameScene extends Phaser.Scene {
         
         this.add.text(width / 2, 30, 'HANGMAN', {
             fontSize: '32px',
-            color: '#ffffff',
+            color: '#333333',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
         this.errorText = this.add.text(width / 2, 70, `Mistakes: ${this.wrongGuesses}/${this.maxWrongGuesses}`, {
             fontSize: '20px',
-            color: '#e74c3c'
+            color: '#FF6B6B'
         }).setOrigin(0.5);
 
         this.wordDisplay = this.add.text(width / 2, 450, '', {
-            fontSize: '24px',
-            color: '#f1c40f',
+            fontSize: '16px',
+            color: '#FFD93D',
             fontStyle: 'bold',
             letterSpacing: 4,
-            stroke: '#000000',
+            stroke: '#333333',
             strokeThickness: 2
         }).setOrigin(0.5);
 
         this.positionText = this.add.text(width / 2, 520, 'Position: 1', {
             fontSize: '18px',
-            color: '#95a5a6'
+            color: '#333333'
         }).setOrigin(0.5);
 
-        this.hintText = this.add.text(width / 2, 555, 'Press SPACE to hear the hint', {
+        this.hintText = this.add.text(width / 2, 555, 'SPACE = space | + = hint', {
             fontSize: '16px',
-            color: '#3498db'
+            color: '#FFD93D'
         }).setOrigin(0.5);
 
-        const repeatButton = this.add.rectangle(width / 2, 590, 200, 40, 0x3498db)
+        const repeatWordButton = this.add.rectangle(width / 2 - 110, 590, 200, 40, 0x6C63FF)
             .setInteractive({ useHandCursor: true });
 
-        this.add.text(width / 2, 590, '🔊 REPEAT HINT', {
+        this.add.text(width / 2 - 110, 590, '🔊 REPEAT WORD', {
             fontSize: '16px',
             color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        repeatButton.on('pointerover', () => {
-            repeatButton.setFillStyle(0x2980b9);
+        repeatWordButton.on('pointerover', () => {
+            repeatWordButton.setFillStyle(0x5A52E0);
         });
 
-        repeatButton.on('pointerout', () => {
-            repeatButton.setFillStyle(0x3498db);
+        repeatWordButton.on('pointerout', () => {
+            repeatWordButton.setFillStyle(0x6C63FF);
         });
 
-        repeatButton.on('pointerdown', () => {
-            this.speakDescription();
+        repeatWordButton.on('pointerdown', () => {
+            this.speakWord();
+        });
+
+        const hintButton = this.add.rectangle(width / 2 + 110, 590, 200, 40, 0x6C63FF)
+            .setInteractive({ useHandCursor: true });
+
+        this.add.text(width / 2 + 110, 590, '💡 GET HINT', {
+            fontSize: '16px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        hintButton.on('pointerover', () => {
+            hintButton.setFillStyle(0x5A52E0);
+        });
+
+        hintButton.on('pointerout', () => {
+            hintButton.setFillStyle(0x6C63FF);
+        });
+
+        hintButton.on('pointerdown', () => {
+            this.speakHint();
         });
 
         this.hangmanGraphics = this.add.graphics();
@@ -203,8 +224,13 @@ export default class GameScene extends Phaser.Scene {
             
             const key = event.key.toUpperCase();
             
+            if (event.key === '+' || event.key === '=') {
+                this.speakHint();
+                return;
+            }
+            
             if (event.code === 'Space') {
-                this.speakDescription();
+                this.enterLetter(' ');
                 return;
             }
             
@@ -214,7 +240,7 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.time.delayedCall(500, () => {
-            this.speakDescription();
+            this.speakWord();
         });
     }
 
@@ -225,7 +251,38 @@ export default class GameScene extends Phaser.Scene {
         this.currentDescription = wordData.descripcion;
     }
 
-    speakDescription() {
+    speakWord() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(this.currentWord);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.8;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            const voices = window.speechSynthesis.getVoices();
+            const femaleVoice = voices.find(voice => 
+                voice.lang.includes('en') && 
+                (voice.name.toLowerCase().includes('female') || 
+                 voice.name.toLowerCase().includes('woman') ||
+                 voice.name.toLowerCase().includes('zira') ||
+                 voice.name.toLowerCase().includes('samantha') ||
+                 voice.name.toLowerCase().includes('karen') ||
+                 voice.name.toLowerCase().includes('victoria'))
+            );
+            
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
+            
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.log('Text-to-Speech is not available in this browser');
+        }
+    }
+
+    speakHint() {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             
@@ -264,14 +321,14 @@ export default class GameScene extends Phaser.Scene {
         const correctLetter = this.currentWord[this.currentPosition];
         
         if (letter === correctLetter) {
-            this.flashMessage('Correct!', 0x2ecc71);
+            this.flashMessage('Correct!', 0x4CAF50);
             this.playerInput[this.currentPosition] = letter;
             this.currentPosition++;
             this.updateWordDisplay();
             this.updatePosition();
             this.checkWin();
         } else {
-            this.flashMessage('Wrong letter', 0xe74c3c);
+            this.flashMessage('Wrong letter', 0xFF6B6B);
             this.wrongGuesses++;
             this.errorText.setText(`Mistakes: ${this.wrongGuesses}/${this.maxWrongGuesses}`);
             this.drawHangmanPart();
@@ -283,11 +340,23 @@ export default class GameScene extends Phaser.Scene {
         let display = '';
         for (let i = 0; i < this.currentWord.length; i++) {
             if (this.playerInput[i]) {
-                display += '[' + this.playerInput[i] + '] ';
+                if (this.playerInput[i] === ' ') {
+                    display += '[-] ';
+                } else {
+                    display += '[' + this.playerInput[i] + '] ';
+                }
             } else if (i === this.currentPosition) {
-                display += '[_] ';
+                if (this.currentWord[i] === ' ') {
+                    display += '[_] ';
+                } else {
+                    display += '[_] ';
+                }
             } else {
-                display += '[ ] ';
+                if (this.currentWord[i] === ' ') {
+                    display += '[ ] ';
+                } else {
+                    display += '[ ] ';
+                }
             }
         }
         this.wordDisplay.setText(display.trim());
@@ -332,14 +401,14 @@ export default class GameScene extends Phaser.Scene {
 
     drawHangmanBase() {
         const g = this.hangmanGraphics;
-        g.lineStyle(3, 0xecf0f1);
+        g.lineStyle(3, 0x333333);
         
         g.strokeRect(100, 100, 200, 250);
     }
 
     drawHangmanPart() {
         const g = this.hangmanGraphics;
-        g.lineStyle(4, 0xe74c3c);
+        g.lineStyle(4, 0xFF6B6B);
 
         switch(this.wrongGuesses) {
             case 1:
